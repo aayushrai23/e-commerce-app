@@ -5,12 +5,17 @@ import cart from '../Assets/cart_icon.png';
 import { Link } from 'react-router-dom';
 import { ShopContext } from '../../Context/ShopContext';
 import { FiAlignLeft } from "react-icons/fi";
-
+import { IoMdClose } from "react-icons/io";
 
 export default function Navbar() {
     
     const [menu,setMenu] = useState("shop");
     const {getTotalCartItems} = useContext(ShopContext)
+
+    const [mobileMenu,setMobileMenu] = useState(false) 
+    const toggleMenu=()=>{
+      setMobileMenu(!mobileMenu)
+    }
 
 
   return (
@@ -20,9 +25,9 @@ export default function Navbar() {
             <p>SHOPPER</p>
         </div>
 
-        <div className='nav-menubar hide'>
+        <div className={mobileMenu ? 'nav-menubar' : 'nav-menubar hide'}>
 
-            <ul className='nav-menu'>
+            <ul className = 'nav-menu'>
                 <li onClick={()=>{setMenu("shop")}}> <Link to='/' style={{textDecoration:'none',color:'#626262'}}>Shop</Link> {menu ==="shop" ? <hr/> :<></>}</li>
                 <li onClick={()=>{setMenu("mens")}}> <Link to="/mens" style={{textDecoration:'none',color:'#626262'}}>Men </Link>    {menu ==="mens" ? <hr/> :<></>}</li>
                 <li onClick={()=>{setMenu("womens")}}> <Link to="/womens" style={{textDecoration:'none',color:'#626262'}}>Women</Link>    {menu ==="womens" ? <hr/> :<></>}</li>
@@ -35,7 +40,8 @@ export default function Navbar() {
             </div>
 
         </div>
-        <FiAlignLeft className="nav-icon" size="30px" />
+        {mobileMenu ? <IoMdClose className="nav-icon" size="30px" onClick={toggleMenu} />  :  <FiAlignLeft className="nav-icon" size="30px" onClick={toggleMenu} />}
+        
 
 
     </div>
