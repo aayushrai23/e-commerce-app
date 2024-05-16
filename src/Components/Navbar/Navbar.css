@@ -121,6 +121,7 @@
         margin-top: 51px;
         padding: 30px;
         transition: 1s;
+        z-index: 1;
     }
     .nav-menubar.hide{
         left: -100%;
