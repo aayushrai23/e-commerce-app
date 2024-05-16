@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    height: 90vh;
+    /* height: 90vh; */
 }
 .relatedproducts h1{
     color: #171717;
@@ -20,4 +20,24 @@
     margin-top: 50px;
     display: flex;
     gap: 30px;
+}
+@media (max-width:840px)
+{
+    .relatedproducts{
+        gap: 5px;
+        margin-bottom: 90px;
+    }
+    .relatedproducts h1{
+        font-size: 25px;
+    }
+    .relatedproducts hr{
+        width: 200px;
+        height: 3px;
+    }
+    .relatedproducts-item{
+        margin-top: 30px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
 }

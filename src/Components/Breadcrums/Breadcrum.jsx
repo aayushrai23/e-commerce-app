@@ -8,8 +8,9 @@ export default function Breadcrum(props) {
     <div className="breadcrum">
         HOME <img src={arrow} alt="" />
         SHOP <img src={arrow} alt="" />
-        {product.category} <img src={arrow} alt="" />
-        {product.name}
+        {product.category} 
+        {/* <img src={arrow} alt="" /> */}
+        {/* {product.name} */}
     </div>
   )
 }

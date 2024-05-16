@@ -35,7 +35,7 @@ export default function Navbar() {
             </div>
 
         </div>
-        <FiAlignLeft className="nav-icon" size="50px" />
+        <FiAlignLeft className="nav-icon" size="30px" />
 
 
     </div>

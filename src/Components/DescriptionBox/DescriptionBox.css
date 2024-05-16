@@ -12,10 +12,7 @@
     font-weight: 600;
     width: 150px;
     height: 60px;
-    /* background-color: red; */
     border: 1px solid #d0d0d0;
-
-    /* margin: auto; */
 }
 .descrptionbox-nav-box.fade{
     background:#FBFBFB;
@@ -28,4 +25,23 @@
     border: 1px solid #D0D0D0;
     padding: 48px;
     padding-bottom: 78px;
+}
+@media (max-width:840px)
+{
+    .descriptionbox{
+        margin: 60px 70px;
+    }
+    .descrptionbox-nav-box{
+        font-size: 12px;
+        font-weight: 600;
+        width: 100px;
+        height: 50px;
+    }
+    .descriptionbox-description{
+        gap: 15px;
+        padding: 38px;
+        padding-bottom: 58px;
+    }
+
+
 }

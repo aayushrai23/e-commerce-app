@@ -4,7 +4,7 @@
     padding: 15px;
     box-shadow: 0 1px 3px -2px black;
     align-items: center;
-    width: 100%;
+    /* width: 100%; */
     /* top: 0; */
     /* left: 0; */
     /* position: fixed; */
@@ -20,7 +20,7 @@
 .nav-logo p{
     color:#171717;
     font-size: 38px;
-    font-weight: 600;
+    font-weight: 700;
 }
 .nav-menu{
     display: flex;
@@ -96,11 +96,14 @@
         padding: 5px;
         justify-content: space-between;
     }
+    .nav-logo img{
+        width: 40px;
+    }
     .nav-logo{
         width: 90px;
     }
     .nav-logo p{
-        font-size: 25px;
+        font-size: 20px;
     }
     .nav-icon
     {
@@ -117,11 +120,10 @@
         background: #fde1ff;
         width: 350px;
         margin-top: 100px;
+        transition: 0.6s;
     }
     .nav-menubar.hide{
-        /* right: -100px; */
-        /* right: -100%; */
-        display: none;
+        left: -100%;
     }
 
     .nav-menu{

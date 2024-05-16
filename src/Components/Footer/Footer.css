@@ -52,3 +52,31 @@
     height: 3px;
     background: #c7c7c7;
 }
+@media (max-width:840px){
+    .footer-logo{
+        gap: 10px;
+    }
+    .footer-logo img{
+        width: 48px;
+    }
+    .footer-logo p{
+        font-size: 25px;
+    }
+    .footer-links{
+        flex-direction: column;
+        gap: 25px;
+    }
+    .footer-copyright{
+        /* display: flex; */
+        /* flex-direction: column; */
+        /* align-items: center; */
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 30px;
+        color: #1a1a1a;
+        font-size: 15px;
+        /* padding: 10px; */
+    }
+
+
+}

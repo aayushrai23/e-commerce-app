@@ -1,6 +1,5 @@
 .newsletter{
     width:75%;
-    height:40vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -48,4 +47,42 @@
     font-size: 16px;
     cursor: pointer;
     color: white;
+}
+
+@media (max-width:840px){
+    .newsletter{
+        width:90%;
+        padding: 0px 35px;
+        margin-bottom:65px;
+        background: linear-gradient(180deg,#fde1ff 0%,#e1ffea22 65%);
+        gap:12px;
+    }
+    .newsletter h1{
+        padding-top: 20px;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.1;
+    }
+    .newsletter p{
+        font-size: 12px;
+    }
+    .newsletter div{
+        width: 300px;
+        height: 42px;
+        border-radius: 60px;
+    }
+    .newsletter div button{
+        width: 195px;
+        height: 42px;
+        border-radius: 70px;
+        background: black;
+        font-size: 12px;
+        cursor: pointer;
+        color: white;
+    }
+    
+    
+    
+
+
 }

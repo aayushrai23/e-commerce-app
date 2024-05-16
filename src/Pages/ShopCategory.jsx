@@ -12,17 +12,19 @@ export default function ShopCategory(props) {
     <div className="shop-category">
 
       <img src={props.banner} className='shopcategory-banner' alt="" />
+
       <div className='shopcategory-indexShort'>
         <p>
-          <span>Showing 1-12</span>
+          <span>Showing 1-12 </span>
           out of 36 products
         </p>
+
         <div className='shopcategory-short'>
           Sort by <img src={dropdown} alt="" />
         </div>
       </div>
 
-      <div className='shopcategory-products'>
+      <div className='shopcategory-products' >
         {
         all_product.map((item,i)=>{
           if(props.category===item.category)
