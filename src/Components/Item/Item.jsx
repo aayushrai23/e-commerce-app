@@ -1,7 +1,7 @@
 import React from 'react'
 import './Item.css'
 import { Link } from 'react-router-dom'
-import { Bounce, Fade, Slide } from "react-awesome-reveal";
+import { Slide } from "react-awesome-reveal";
 
 export default function Item(props) 
 {

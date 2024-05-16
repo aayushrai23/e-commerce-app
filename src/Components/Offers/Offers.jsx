@@ -1,9 +1,11 @@
 import React from 'react';
 import './Offers.css';
 import exclusive_img from '../Assets/exclusive_image.png';
+import { Flip } from "react-awesome-reveal";
 
 export default function Offers() {
   return (
+    <Flip triggerOnce>
     <div className='offers'>
         <div className="offers-left">
             <h1>Exclusive</h1>
@@ -17,5 +19,6 @@ export default function Offers() {
         </div>
 
     </div>
+    </Flip>
   )
 }
