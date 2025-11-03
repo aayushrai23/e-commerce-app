@@ -24,12 +24,6 @@ jobs:
       - name: Build React app
         run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: react-build
-          path: build/
-
       - name: Deploy to EC2
         env:
           HOST: ${{ secrets.EC2_HOST }}
@@ -40,8 +34,8 @@ jobs:
           echo "$KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          echo "Connecting to EC2 instance..."
-          scp -i private_key.pem -r build/* ${USER}@${HOST}:${TARGET_DIR}/build/
+          echo "Uploading build files to EC2..."
+          scp -i private_key.pem -o StrictHostKeyChecking=no -r build/* ${USER}@${HOST}:${TARGET_DIR}/build/
 
-          echo "Restarting NGINX on EC2..."
-          ssh -i private_key.pem ${USER}@${HOST} "sudo systemctl restart nginx"
+          echo "Restarting NGINX..."
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ${USER}@${HOST} "sudo systemctl restart nginx"
