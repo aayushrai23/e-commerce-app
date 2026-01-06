@@ -1,4 +1,4 @@
-name: React CI/CD with Secrets Manager
+name: React CI/CD (Stable)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -20,24 +20,23 @@ jobs:
         with:
           node-version: 18
 
-      # 3️⃣ Verify AWS CLI (already available on GitHub runner)
+      # 3️⃣ Verify AWS CLI (preinstalled on runner)
       - name: Verify AWS CLI
         run: aws --version
 
-      # 4️⃣ Fetch secrets from AWS Secrets Manager
+      # 4️⃣ Fetch secrets from AWS Secrets Manager (REGION HARD-CODED)
       - name: Fetch secrets from AWS Secrets Manager
-  run: |
-    aws secretsmanager get-secret-value \
-      --secret-id prod/my-react-app \
-      --region ap-south-1 \
-      --query SecretString \
-      --output text > secrets.json
+        run: |
+          aws secretsmanager get-secret-value \
+            --secret-id prod/my-react-app \
+            --region ap-south-1 \
+            --query SecretString \
+            --output text > secrets.json
 
-    cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
-  env:
-    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-}}
+          cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       # 5️⃣ Install dependencies
       - name: Install dependencies
@@ -58,6 +57,6 @@ jobs:
           target: "/var/www/html"
           strip_components: 1
 
-      # 8️⃣ Deployment confirmation
+      # 8️⃣ Success message
       - name: Deployment complete
         run: echo "✅ Deployment is complete"
