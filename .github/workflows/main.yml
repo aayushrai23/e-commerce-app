@@ -32,12 +32,12 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      # 5️⃣ Install jq (safe step)
+      # 5️⃣ Install jq
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 6️⃣ Fetch secrets from AWS Secrets Manager → .env
-      - name: Fetch secrets from AWS Secrets Manager
+      # 6️⃣ Fetch app secrets from AWS Secrets Manager
+      - name: Fetch app secrets
         run: |
           aws secretsmanager get-secret-value \
             --secret-id prod/my-react-app \
@@ -46,25 +46,32 @@ jobs:
 
           jq -r 'to_entries[] | "\(.key)=\(.value)"' secrets.json > .env
 
-      # 7️⃣ Install dependencies
+      # 7️⃣ Fetch SSH private key from AWS Secrets Manager
+      - name: Fetch SSH private key
+        run: |
+          aws secretsmanager get-secret-value \
+            --secret-id prod/ssh-key \
+            --query SecretString \
+            --output text > deploy_key
+
+          chmod 600 deploy_key
+
+      # 8️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 8️⃣ Build React app
+      # 9️⃣ Build React app
       - name: Build React app
         run: npm run build
 
-      # 9️⃣ Deploy build to Ubuntu server
+      # 🔟 Deploy build to Ubuntu server (native SCP)
       - name: Deploy build to Ubuntu server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "build/*"
-          target: "/var/www/html"
-          strip_components: 1
+        run: |
+          scp -o StrictHostKeyChecking=no \
+            -i deploy_key \
+            -r build/* \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/html
 
-      # 🔟 Success message
+      # 1️⃣1️⃣ Success message
       - name: Deployment complete
-        run: echo "✅ Deployment is complete"
+        run: echo "✅ Deployment completed successfully"
