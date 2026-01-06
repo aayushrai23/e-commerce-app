@@ -36,7 +36,7 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 6️⃣ Fetch ALL secrets from AWS Secrets Manager
+      # 6️⃣ Fetch all secrets from AWS Secrets Manager
       - name: Fetch secrets from AWS Secrets Manager
         run: |
           aws secretsmanager get-secret-value \
@@ -49,29 +49,32 @@ jobs:
         run: |
           jq -r 'to_entries[] | "\(.key)=\(.value)"' all_secrets.json > .env
 
-      # 8️⃣ Extract SSH private key
+      # 8️⃣ Prepare SSH private key
       - name: Prepare SSH key
         run: |
           jq -r '.SERVER_SSH_KEY' all_secrets.json > deploy_key
           chmod 600 deploy_key
 
-      # 9️⃣ Install dependencies
+      # 9️⃣ Validate SSH key (fails fast if broken)
+      - name: Validate SSH key
+        run: ssh-keygen -l -f deploy_key
+
+      # 🔟 Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 🔟 Build React app
+      # 1️⃣1️⃣ Build React app
       - name: Build React app
         run: npm run build
 
-      # 1️⃣1️⃣ Add server to known_hosts
+      # 1️⃣2️⃣ Add server to known_hosts
       - name: Add server to known_hosts
         run: |
           SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
-
           mkdir -p ~/.ssh
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
-      # 1️⃣2️⃣ Deploy build to Ubuntu server
+      # 1️⃣3️⃣ Deploy build to Ubuntu server
       - name: Deploy build to Ubuntu server
         run: |
           SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
@@ -81,10 +84,10 @@ jobs:
             -r build/* \
             $SERVER_USER@$SERVER_HOST:/var/www/html
 
-      # 1️⃣3️⃣ Cleanup sensitive files
+      # 1️⃣4️⃣ Cleanup sensitive files
       - name: Cleanup secrets
         run: rm -f deploy_key all_secrets.json .env
 
-      # 1️⃣4️⃣ Success message
+      # 1️⃣5️⃣ Success message
       - name: Deployment complete
         run: echo "✅ Deployment completed successfully"
