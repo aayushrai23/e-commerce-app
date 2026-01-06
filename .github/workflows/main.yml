@@ -26,17 +26,18 @@ jobs:
 
       # 4️⃣ Fetch secrets from AWS Secrets Manager
       - name: Fetch secrets from AWS Secrets Manager
-        run: |
-          aws secretsmanager get-secret-value \
-            --secret-id prod/my-react-app \
-            --region ${{ secrets.AWS_REGION }} \
-            --query SecretString \
-            --output text > secrets.json
+  run: |
+    aws secretsmanager get-secret-value \
+      --secret-id prod/my-react-app \
+      --region ap-south-1 \
+      --query SecretString \
+      --output text > secrets.json
 
-          cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+  env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+}}
 
       # 5️⃣ Install dependencies
       - name: Install dependencies
