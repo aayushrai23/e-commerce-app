@@ -20,33 +20,37 @@ jobs:
         with:
           node-version: 18
 
-      # 3️⃣ Verify AWS CLI (preinstalled on runner)
-      - name: Verify AWS CLI
-        run: aws --version
+      # 3️⃣ Configure AWS credentials (OFFICIAL & REQUIRED)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
-      # 4️⃣ Fetch secrets from AWS Secrets Manager (REGION HARD-CODED)
+      # 4️⃣ Verify AWS identity (debug-proof)
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      # 5️⃣ Fetch secrets from AWS Secrets Manager
       - name: Fetch secrets from AWS Secrets Manager
         run: |
           aws secretsmanager get-secret-value \
             --secret-id prod/my-react-app \
-            --region ap-south-1 \
             --query SecretString \
             --output text > secrets.json
 
           cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # 5️⃣ Install dependencies
+      # 6️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 6️⃣ Build React app
+      # 7️⃣ Build React app
       - name: Build React app
         run: npm run build
 
-      # 7️⃣ Deploy build to Ubuntu server
+      # 8️⃣ Deploy build to Ubuntu server
       - name: Deploy build to Ubuntu server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -57,6 +61,6 @@ jobs:
           target: "/var/www/html"
           strip_components: 1
 
-      # 8️⃣ Success message
+      # 9️⃣ Success message
       - name: Deployment complete
         run: echo "✅ Deployment is complete"
