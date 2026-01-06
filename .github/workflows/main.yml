@@ -1,41 +1,72 @@
-name: Deploy to EC2
+name: Frontend CI/CD - Ubuntu
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
+          cache: npm
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
 
-      - name: Build React app
+      # 4️⃣ Build React app (CRA -> build/)
+      - name: Build frontend
         run: npm run build
 
-      - name: Deploy to EC2
-        env:
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.EC2_USER }}
-          KEY: ${{ secrets.EC2_KEY }}
-          TARGET_DIR: ${{ secrets.EC2_PATH }}
-        run: |
-          echo "$KEY" > private_key.pem
-          chmod 600 private_key.pem
+      # 5️⃣ Ensure app directory exists on server
+      - name: Prepare server directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p ${{ secrets.APP_PATH }}
 
-          echo "Uploading build files to EC2..."
-          scp -i private_key.pem -o StrictHostKeyChecking=no -r build/* ${USER}@${HOST}:${TARGET_DIR}/build/
+      # 6️⃣ Remove old build
+      - name: Clean old build on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            sudo rm -rf ${{ secrets.APP_PATH }}/build
 
-          echo "Restarting NGINX..."
-          ssh -i private_key.pem -o StrictHostKeyChecking=no ${USER}@${HOST} "sudo systemctl restart nginx"
+      # 7️⃣ Upload new build
+      - name: Deploy build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "build"
+          target: "${{ secrets.APP_PATH }}"
+
+      # 8️⃣ Reload Nginx
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            sudo systemctl reload nginx
+            echo "✅ Frontend deployed successfully"
