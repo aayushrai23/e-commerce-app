@@ -46,15 +46,17 @@ jobs:
 
           jq -r 'to_entries[] | "\(.key)=\(.value)"' secrets.json > .env
 
-      # 7️⃣ Fetch SSH private key from AWS Secrets Manager
-      - name: Fetch SSH private key
-        run: |
-          aws secretsmanager get-secret-value \
-            --secret-id prod/ssh-key \
-            --query SecretString \
-            --output text > deploy_key
+     # 7️⃣ Fetch SSH private key from AWS Secrets Manager
+- name: Fetch SSH private key
+  run: |
+    aws secretsmanager get-secret-value \
+      --secret-id prod/my-react-app \
+      --query SecretString \
+      --output text > all_secrets.json
 
-          chmod 600 deploy_key
+    jq -r '.SERVER_SSH_KEY' all_secrets.json > deploy_key
+    chmod 600 deploy_key
+
 
       # 8️⃣ Install dependencies
       - name: Install dependencies
