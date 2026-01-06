@@ -36,7 +36,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      # 5️⃣ Fetch SSH key from AWS Secrets Manager
+      # 5️⃣ Fetch SSH key from Secrets Manager (FIXED)
       - name: Fetch SSH key
         run: |
           sudo apt-get update -y
@@ -45,7 +45,11 @@ jobs:
           aws secretsmanager get-secret-value \
             --secret-id arn:aws:secretsmanager:ap-south-1:443014728714:secret:prod/my-react-app-GZ27S5 \
             --query SecretString \
-            --output text | jq -r '.SERVER_SSH_KEY' > deploy_key
+            --output text \
+          | jq -r '.SERVER_SSH_KEY' \
+          | sed 's/-----BEGIN OPENSSH PRIVATE KEY-----/-----BEGIN OPENSSH PRIVATE KEY-----\n/' \
+          | sed 's/-----END OPENSSH PRIVATE KEY-----/\n-----END OPENSSH PRIVATE KEY-----/' \
+          > deploy_key
 
           chmod 600 deploy_key
 
