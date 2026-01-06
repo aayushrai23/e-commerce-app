@@ -58,4 +58,4 @@ jobs:
           strip_components: 1
 
       - name: Deployment complete
-        run: echo "✅ Deployment is complete"
+        run: echo "✅ Deployment is completed"
