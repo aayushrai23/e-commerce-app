@@ -1,4 +1,4 @@
-name: CI/CD – Deploy React App
+name: Build & Deploy React (Manual)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,7 +15,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Configure AWS credentials
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # 3️⃣ Install dependencies & build
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      # 4️⃣ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,7 +36,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      # 3️⃣ Fetch SSH key from AWS Secrets Manager
+      # 5️⃣ Fetch SSH key from AWS Secrets Manager
       - name: Fetch SSH key
         run: |
           sudo apt-get update -y
@@ -36,27 +49,20 @@ jobs:
 
           chmod 600 deploy_key
 
-      # 4️⃣ Deploy to Ubuntu server
-      - name: Deploy application
+      # 6️⃣ Deploy build to Ubuntu server
+      - name: Deploy to server
         run: |
-          ssh -i deploy_key -o StrictHostKeyChecking=no ubuntu@65.0.94.23 << 'EOF'
-            set -e
+          rsync -avz --delete \
+            -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
+            build/ ubuntu@65.0.94.23:/var/www/html/
 
-            echo "🚀 Starting deployment..."
+      # 7️⃣ Reload Nginx
+      - name: Reload Nginx
+        run: |
+          ssh -i deploy_key -o StrictHostKeyChecking=no ubuntu@65.0.94.23 \
+          "sudo systemctl reload nginx"
 
-            cd /var/www/my-react-app
-
-            git pull origin main
-
-            npm install
-            npm run build
-
-            sudo systemctl reload nginx
-
-            echo "✅ Deployment completed"
-          EOF
-
-      # 5️⃣ Cleanup
-      - name: Cleanup
+      # 8️⃣ Cleanup
+      - name: Cleanup SSH key
         run: |
           shred -u deploy_key
