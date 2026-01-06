@@ -36,44 +36,50 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 6️⃣ Fetch app secrets from AWS Secrets Manager
-      - name: Fetch app secrets
+      # 6️⃣ Fetch ALL secrets from AWS Secrets Manager
+      - name: Fetch secrets from AWS Secrets Manager
         run: |
           aws secretsmanager get-secret-value \
             --secret-id prod/my-react-app \
             --query SecretString \
-            --output text > secrets.json
+            --output text > all_secrets.json
 
-          jq -r 'to_entries[] | "\(.key)=\(.value)"' secrets.json > .env
+      # 7️⃣ Extract env vars for React
+      - name: Create .env file
+        run: |
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' all_secrets.json > .env
 
-     # 7️⃣ Fetch SSH private key from AWS Secrets Manager
-- name: Fetch SSH private key
-  run: |
-    aws secretsmanager get-secret-value \
-      --secret-id prod/my-react-app \
-      --query SecretString \
-      --output text > all_secrets.json
+      # 8️⃣ Extract SSH private key
+      - name: Prepare SSH key
+        run: |
+          jq -r '.SERVER_SSH_KEY' all_secrets.json > deploy_key
+          chmod 600 deploy_key
 
-    jq -r '.SERVER_SSH_KEY' all_secrets.json > deploy_key
-    chmod 600 deploy_key
-
-
-      # 8️⃣ Install dependencies
+      # 9️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 9️⃣ Build React app
+      # 🔟 Build React app
       - name: Build React app
         run: npm run build
 
-      # 🔟 Deploy build to Ubuntu server (native SCP)
+      # 1️⃣1️⃣ Add server to known_hosts
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # 1️⃣2️⃣ Deploy build to Ubuntu server
       - name: Deploy build to Ubuntu server
         run: |
-          scp -o StrictHostKeyChecking=no \
-            -i deploy_key \
+          scp -i deploy_key \
             -r build/* \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/html
 
-      # 1️⃣1️⃣ Success message
+      # 1️⃣3️⃣ Cleanup sensitive files
+      - name: Cleanup secrets
+        run: rm -f deploy_key all_secrets.json .env
+
+      # 1️⃣4️⃣ Success message
       - name: Deployment complete
         run: echo "✅ Deployment completed successfully"
