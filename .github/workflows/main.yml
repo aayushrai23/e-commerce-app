@@ -1,12 +1,13 @@
-name: React CI/CD (Stable)
+name: CI/CD – Deploy React App
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,13 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      # 3️⃣ Configure AWS credentials
+      # 2️⃣ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -28,66 +23,40 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      # 4️⃣ Install jq (for app config only)
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      # 5️⃣ Fetch app config (JSON secret)
-      - name: Fetch app secrets
-        run: |
-          aws secretsmanager get-secret-value \
-            --secret-id prod/my-react-app \
-            --query SecretString \
-            --output text > app_secrets.json
-
-      # 6️⃣ Create .env for React
-      - name: Create .env
-        run: |
-          jq -r 'to_entries[] | "\(.key)=\(.value)"' app_secrets.json > .env
-
-      # 7️⃣ Fetch SSH private key (RAW – no jq)
+      # 3️⃣ Fetch SSH key from AWS Secrets Manager
       - name: Fetch SSH key
         run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
           aws secretsmanager get-secret-value \
-            --secret-id prod/ssh-key \
+            --secret-id arn:aws:secretsmanager:ap-south-1:443014728714:secret:prod/my-react-app-GZ27S5 \
             --query SecretString \
-            --output text > deploy_key
+            --output text | jq -r '.SERVER_SSH_KEY' > deploy_key
+
           chmod 600 deploy_key
 
-      # 8️⃣ Validate SSH key (fail fast)
-      - name: Validate SSH key
-        run: ssh-keygen -l -f deploy_key
-
-      # 9️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # 🔟 Build React app
-      - name: Build React app
-        run: npm run build
-
-      # 1️⃣1️⃣ Upload build to ubuntu home
-      - name: Upload build
+      # 4️⃣ Deploy to Ubuntu server
+      - name: Deploy application
         run: |
-          SERVER_HOST=$(jq -r '.SERVER_HOST' app_secrets.json)
-          scp -i deploy_key -r build ubuntu@$SERVER_HOST:/home/ubuntu/
+          ssh -i deploy_key -o StrictHostKeyChecking=no ubuntu@65.0.94.23 << 'EOF'
+            set -e
 
-      # 1️⃣2️⃣ Deploy to web root (sudo move)
-      - name: Deploy to web root
-        run: |
-          SERVER_HOST=$(jq -r '.SERVER_HOST' app_secrets.json)
+            echo "🚀 Starting deployment..."
 
-          ssh -i deploy_key ubuntu@$SERVER_HOST << 'EOF'
-            sudo rm -rf /var/www/html/*
-            sudo mv /home/ubuntu/build/* /var/www/html/
-            sudo chown -R www-data:www-data /var/www/html
-            sudo chmod -R 755 /var/www/html
+            cd /var/www/my-react-app
+
+            git pull origin main
+
+            npm install
+            npm run build
+
+            sudo systemctl reload nginx
+
+            echo "✅ Deployment completed"
           EOF
 
-      # 1️⃣3️⃣ Cleanup
+      # 5️⃣ Cleanup
       - name: Cleanup
-        run: rm -f deploy_key app_secrets.json .env
-
-      # 1️⃣4️⃣ Done
-      - name: Deployment complete
-        run: echo "✅ Deployment completed successfully"
+        run: |
+          shred -u deploy_key
