@@ -44,7 +44,7 @@ jobs:
             --query SecretString \
             --output text > all_secrets.json
 
-      # 7️⃣ Extract env vars for React
+      # 7️⃣ Create .env file for React
       - name: Create .env file
         run: |
           jq -r 'to_entries[] | "\(.key)=\(.value)"' all_secrets.json > .env
@@ -66,15 +66,20 @@ jobs:
       # 1️⃣1️⃣ Add server to known_hosts
       - name: Add server to known_hosts
         run: |
+          SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
+
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
       # 1️⃣2️⃣ Deploy build to Ubuntu server
       - name: Deploy build to Ubuntu server
         run: |
+          SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
+          SERVER_USER=$(jq -r '.SERVER_USER' all_secrets.json)
+
           scp -i deploy_key \
             -r build/* \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/html
+            $SERVER_USER@$SERVER_HOST:/var/www/html
 
       # 1️⃣3️⃣ Cleanup sensitive files
       - name: Cleanup secrets
