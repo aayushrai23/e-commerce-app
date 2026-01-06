@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      # 3️⃣ Configure AWS credentials (OFFICIAL & REQUIRED)
+      # 3️⃣ Configure AWS credentials (IAM User)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -28,11 +28,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      # 4️⃣ Verify AWS identity (debug-proof)
+      # 4️⃣ Verify AWS authentication
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      # 5️⃣ Fetch secrets from AWS Secrets Manager
+      # 5️⃣ Install jq (safe step)
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      # 6️⃣ Fetch secrets from AWS Secrets Manager → .env
       - name: Fetch secrets from AWS Secrets Manager
         run: |
           aws secretsmanager get-secret-value \
@@ -40,17 +44,17 @@ jobs:
             --query SecretString \
             --output text > secrets.json
 
-          cat secrets.json | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' secrets.json > .env
 
-      # 6️⃣ Install dependencies
+      # 7️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 7️⃣ Build React app
+      # 8️⃣ Build React app
       - name: Build React app
         run: npm run build
 
-      # 8️⃣ Deploy build to Ubuntu server
+      # 9️⃣ Deploy build to Ubuntu server
       - name: Deploy build to Ubuntu server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -61,6 +65,6 @@ jobs:
           target: "/var/www/html"
           strip_components: 1
 
-      # 9️⃣ Success message
+      # 🔟 Success message
       - name: Deployment complete
         run: echo "✅ Deployment is complete"
