@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      # 3️⃣ Configure AWS credentials (IAM User)
+      # 3️⃣ Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -28,15 +28,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      # 4️⃣ Verify AWS authentication
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      # 5️⃣ Install jq
+      # 4️⃣ Install jq
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 6️⃣ Fetch secrets from AWS Secrets Manager
+      # 5️⃣ Fetch secrets from AWS Secrets Manager
       - name: Fetch secrets
         run: |
           aws secretsmanager get-secret-value \
@@ -44,50 +40,52 @@ jobs:
             --query SecretString \
             --output text > all_secrets.json
 
-      # 7️⃣ Create .env file for React
+      # 6️⃣ Create .env file
       - name: Create .env
         run: |
           jq -r 'to_entries[] | "\(.key)=\(.value)"' all_secrets.json > .env
 
-      # 8️⃣ Prepare SSH private key
+      # 7️⃣ Prepare SSH private key
       - name: Prepare SSH key
         run: |
           jq -r '.SERVER_SSH_KEY' all_secrets.json > deploy_key
           chmod 600 deploy_key
 
-      # 9️⃣ Validate SSH key (fail fast)
-      - name: Validate SSH key
-        run: ssh-keygen -l -f deploy_key
-
-      # 🔟 Install dependencies
+      # 8️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 1️⃣1️⃣ Build React app
+      # 9️⃣ Build React app
       - name: Build React app
         run: npm run build
 
-      # 1️⃣2️⃣ Add server to known_hosts
-      - name: Add server to known_hosts
-        run: |
-          SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
-
-      # 1️⃣3️⃣ Deploy build to Ubuntu server
-      - name: Deploy build
+      # 🔟 Upload build to ubuntu home directory
+      - name: Upload build to server
         run: |
           SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
           SERVER_USER=$(jq -r '.SERVER_USER' all_secrets.json)
 
           scp -i deploy_key \
-            -r build/* \
-            $SERVER_USER@$SERVER_HOST:/var/www/html
+            -r build \
+            $SERVER_USER@$SERVER_HOST:/home/ubuntu/
 
-      # 1️⃣4️⃣ Cleanup sensitive files
+      # 1️⃣1️⃣ Deploy to web root using sudo
+      - name: Deploy to web root
+        run: |
+          SERVER_HOST=$(jq -r '.SERVER_HOST' all_secrets.json)
+          SERVER_USER=$(jq -r '.SERVER_USER' all_secrets.json)
+
+          ssh -i deploy_key $SERVER_USER@$SERVER_HOST << 'EOF'
+            sudo rm -rf /var/www/html/*
+            sudo mv /home/ubuntu/build/* /var/www/html/
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R 755 /var/www/html
+          EOF
+
+      # 1️⃣2️⃣ Cleanup sensitive files
       - name: Cleanup
         run: rm -f deploy_key all_secrets.json .env
 
-      # 1️⃣5️⃣ Success
+      # 1️⃣3️⃣ Done
       - name: Deployment complete
         run: echo "✅ Deployment completed successfully"
